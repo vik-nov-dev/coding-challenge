@@ -62,29 +62,47 @@ class Block {
 	 * @return string The markup of the block.
 	 */
 	public function render_callback( $attributes, $content, $block ) {
-		$post_types = get_post_types( [ 'public' => true ] );
-		$class_name = $attributes['className'];
-		ob_start();
+		$post_types = get_post_types( array( 'public' => true ) );
 
+		$class_name = '';
+		if ( isset( $attributes['className'] ) ) {
+			$class_name = $attributes['className'];
+		}
+
+		ob_start();
 		?>
-		<div class="<?php echo $class_name; ?>">
-			<h2>Post Counts</h2>
+		<div class="<?php echo esc_attr( $class_name ); ?>">
+			<h2><?php esc_html_e( 'Post Counts', 'site-counts' ); ?></h2>
 			<?php
 			foreach ( $post_types as $post_type_slug ) :
 				$post_type_object = get_post_type_object( $post_type_slug );
-				$post_count = count(
-					get_posts(
-						[
-							'post_type' => $post_type_slug,
-							'posts_per_page' => -1,
-						]
-					)
-				);
-
+				$post_count       = wp_count_posts( $post_type_slug );
 				?>
-				<p><?php echo 'There are ' . $post_count . ' ' . $post_type_object->labels->name . '.'; ?></p>
+				<p>
+					<?php
+						echo wp_sprintf(
+							/* translators: 1: Posts count, 2: Post type name. */
+							esc_html__( 'There are %1$s %2$s.', 'site-counts' ),
+							number_format_i18n( $post_count->publish ),
+							_n(
+								esc_html__( $post_type_object->labels->singular_name ),
+								esc_html__( $post_type_object->labels->name ),
+								$post_count->publish
+							)
+						);
+					?>
 			<?php endforeach; ?>
-			<p><?php echo 'The current post ID is ' . $_GET['post_id'] . '.'; ?></p>
+			<?php if ( isset( $_GET['post_id'] ) && intval( $_GET['post_id'] ) ): ?>
+			<p>
+				<?php
+					echo wp_sprintf(
+						/* translators: %d: Post ID. */
+						esc_html__( 'The current post ID is %d.', 'site-counts' ),
+						number_format_i18n( $_GET['post_id'] )
+					);
+				?>
+			</p>
+			<?php endif; ?>
 		</div>
 		<?php
 
